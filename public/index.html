@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Decoder</title>
+
+    <!-- Materialize CSS (Google Material Design) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f5f5f5;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 40px auto;
+            text-align: center;
+        }
+
+        #dropZone {
+            border: 2px dashed #42a5f5;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            transition: 0.3s;
+        }
+
+        #dropZone:hover {
+            background: #e3f2fd;
+        }
+
+        .result-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding: 10px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #result {
+            flex: 1;
+            font-weight: bold;
+            word-break: break-word;
+            text-align: left;
+
+            box-sizing: inherit;
+            background: #f1f3f4;
+            color: #37474f;
+            direction: ltr !important;
+            font: 14px/20px Roboto Mono, monospace;
+            overflow-x: auto;
+            padding: 24px;
+            position: relative;
+            margin: 0;
+            padding-block: 24px;
+            padding-inline: 24px;
+        }
+
+        .copy-btn {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 24px;
+            color: #42a5f5;
+            display: flex;
+            align-items: center;
+        }
+
+        .copy-btn:hover {
+            color: #1e88e5;
+        }
+
+        .copy-btn:focus, .copy-btn:active {
+            background-color: transparent !important;
+            outline: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h4 class="blue-text text-darken-2">QR Code Decoder</h4>
+
+    <div id="dropZone" class="card-panel">
+        <i class="material-icons large blue-text">cloud_upload</i>
+        <p>Drag & Drop Image Here or Paste (Ctrl+V)</p>
+    </div>
+
+    <input type="file" id="fileInput" hidden>
+
+    <button class="btn waves-effect waves-light blue" onclick="uploadImage()">
+        <i class="material-icons left">qr_code_scanner</i> Decode
+    </button>
+
+    <!-- Result Section -->
+    <div id="resultContainer" class="result-container" style="display: none;">
+        <p id="result"></p>
+        <button class="copy-btn" onclick="copyToClipboard()">
+            <span class="material-icons">content_copy</span>
+        </button>
+    </div>
+</div>
+
+<!-- Materialize JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+<script>
+    const dropZone = document.getElementById("dropZone")
+    const fileInput = document.getElementById("fileInput")
+    const resultContainer = document.getElementById("resultContainer")
+    const resultText = document.getElementById("result")
+
+    dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault()
+        dropZone.style.borderColor = "#1e88e5"
+    })
+
+    dropZone.addEventListener("dragleave", () => {
+        dropZone.style.borderColor = "#42a5f5"
+    })
+
+    dropZone.addEventListener("drop", (e) => {
+        e.preventDefault()
+        dropZone.style.borderColor = "#42a5f5"
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files
+            uploadImage()
+        }
+    })
+
+    document.addEventListener("paste", (e) => {
+        if (e.clipboardData.files.length) {
+            fileInput.files = e.clipboardData.files
+            uploadImage()
+        }
+    })
+
+    async function uploadImage() {
+        if (!fileInput.files.length) {
+            M.toast({html: "Please select an image", classes: "red"})
+            return
+        }
+
+        const formData = new FormData()
+        formData.append("qrImage", fileInput.files[0])
+
+        const response = await fetch("/decode", {
+            method: "POST",
+            body: formData
+        })
+
+        const result = await response.json()
+        resultText.innerText = result.decodedText || result.error
+        resultContainer.style.display = "flex"
+    }
+
+    function copyToClipboard() {
+        const text = resultText.innerText
+        if (!text) return
+
+        navigator.clipboard.writeText(text).then(() => {
+            M.toast({html: "Copied to clipboard!", classes: "green"})
+        }).catch(() => {
+            M.toast({html: "Failed to copy!", classes: "red"})
+        })
+    }
+</script>
+</body>
+</html>
