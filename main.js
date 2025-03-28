@@ -53,7 +53,7 @@ app.post("/decode", upload.single("qrImage"), async (req, res) => {
         res.json({decodedText: result?.getText() || "No QR code detected"})
     } catch (err) {
         console.error(err)
-        res.status(500).json({error: "Error decoding QR code"})
+        res.status(500).json({error: `Error: ${err?.message}`})
     }
 })
 

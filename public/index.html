@@ -82,6 +82,12 @@
             outline: none;
             box-shadow: none;
         }
+
+        .preview {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -102,6 +108,7 @@
 
     <!-- Result Section -->
     <div id="resultContainer" class="result-container" style="display: none;">
+        <img id="imagePreview" class="preview" src="" alt="Uploaded Image">
         <p id="result"></p>
         <button class="copy-btn" onclick="copyToClipboard()">
             <span class="material-icons">content_copy</span>
@@ -117,6 +124,7 @@
     const fileInput = document.getElementById("fileInput")
     const resultContainer = document.getElementById("resultContainer")
     const resultText = document.getElementById("result")
+    const imagePreview = document.getElementById("imagePreview")
 
     dropZone.addEventListener("dragover", (e) => {
         e.preventDefault()
@@ -131,26 +139,35 @@
         e.preventDefault()
         dropZone.style.borderColor = "#42a5f5"
         if (e.dataTransfer.files.length) {
-            fileInput.files = e.dataTransfer.files
-            uploadImage()
+            handleFile(e.dataTransfer.files[0])
         }
     })
 
     document.addEventListener("paste", (e) => {
         if (e.clipboardData.files.length) {
-            fileInput.files = e.clipboardData.files
-            uploadImage()
+            handleFile(e.clipboardData.files[0])
         }
     })
 
-    async function uploadImage() {
-        if (!fileInput.files.length) {
+    function handleFile(file) {
+        fileInput.files = new DataTransfer().files;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            imagePreview.src = e.target.result
+            imagePreview.style.display = "block"
+        };
+        reader.readAsDataURL(file)
+        uploadImage(file)
+    }
+
+    async function uploadImage(file) {
+        if (!file) {
             M.toast({html: "Please select an image", classes: "red"})
             return
         }
 
         const formData = new FormData()
-        formData.append("qrImage", fileInput.files[0])
+        formData.append("qrImage", file)
 
         const response = await fetch("/decode", {
             method: "POST",
